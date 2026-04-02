@@ -537,7 +537,7 @@ export default function App() {
   const isOpen = sidebarOpen;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-100">
+    <div id="print-root" className="flex flex-col h-screen overflow-hidden bg-slate-100">
 
       {/* ── TOPBAR ──────────────────────────────────────────────── */}
       <header className="no-print flex-shrink-0 bg-white border-b border-slate-200 shadow-sm z-30">
