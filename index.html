@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora FinTech de Préstamos - Ingeniería Económica</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #f093fb;
+            --secondary-dark: #f5576c;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Abstract glowing background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 40vw;
+            height: 40vw;
+            background: var(--primary);
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: var(--secondary-dark);
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+
+            100% {
+                transform: translateY(30px) scale(1.1);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .intro {
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 1.5rem auto;
+            line-height: 1.6;
+        }
+
+        .currency-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .currency-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .currency-btn.active,
+        .currency-btn:hover {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: transparent;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            color: #000;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        /* Controls Area */
+        .controls-panel {
+            animation-delay: 0.2s;
+        }
+
+        .instructions {
+            background: rgba(0, 242, 254, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .control-header label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .control-header input[type="number"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            color: var(--primary);
+            padding: 0.5rem;
+            border-radius: 8px;
+            width: 120px;
+            text-align: right;
+            font-size: 1.1rem;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .control-header input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3);
+            margin-top: 1rem;
+        }
+
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px rgba(0, 242, 254, 0.5);
+            filter: brightness(1.2);
+        }
+
+        .btn-calc:active {
+            transform: translateY(1px);
+        }
+
+        /* Results Area */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            animation-delay: 0.4s;
+        }
+
+        .main-result {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.1);
+        }
+
+        .main-result::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.15), transparent 70%);
+            pointer-events: none;
+        }
+
+        .result-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .result-value {
+            font-size: 5rem;
+            /* En grande y destacado */
+            font-weight: 800;
+            color: var(--text-main);
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            line-height: 1;
+        }
+
+        .result-value span {
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .result-value {
+                font-size: 3rem;
+            }
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--card-border);
+            height: 350px;
+            position: relative;
+        }
+
+        .chart-label {
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .full-width-chart {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--card-border);
+            height: 400px;
+        }
+
+        .analysis-section {
+            background: rgba(240, 147, 251, 0.05);
+            border-left: 4px solid var(--secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .analysis-section strong {
+            color: var(--secondary);
+        }
+
+        /* Table */
+        .table-wrapper {
+            margin-top: 1rem;
+            overflow-x: auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 1rem;
+            border-bottom: 2px solid var(--card-border);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        th:first-child {
+            text-align: center;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            color: #d1d5db;
+        }
+
+        td:first-child {
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .export-btn-container {
+            display: flex;
+            justify-content: center;
+            margin: 3rem 0;
+            width: 100%;
+        }
+
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-export::before {
+            content: '📄\fe0f';
+            font-size: 1.4rem;
+        }
+
+        .btn-export:hover {
+            border-color: var(--secondary);
+            box-shadow: 0 10px 30px rgba(240, 147, 251, 0.2);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #1e293b, #475569);
+        }
+
+        .credits {
+            text-align: center;
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .credits-inner {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem 3rem;
+            border-radius: 16px;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .credits:hover .credits-inner {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+        }
+
+        /* Ladeada effect on click */
+        .credits.tilted .credits-inner {
+            transform: rotateZ(-3deg) rotateX(10deg) scale(1.05);
+            border-color: var(--primary);
+            box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 242, 254, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+        }
+
+        .credits h3 {
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .credits p {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            transition: color 0.3s;
+        }
+
+        .credits-email {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            color: var(--primary);
+            font-size: 0.95rem;
+            margin-top: 0;
+            transition: all 0.5s ease;
+        }
+
+        .credits.tilted .credits-email {
+            max-height: 50px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        #pdf-content {
+            padding: 1rem;
+            width: 100%;
+        }
+
+        /* PDF Styles override */
+        .pdf-mode {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        .pdf-mode * {
+            color: #000000 !important;
+        }
+
+        .pdf-mode .bg-blob,
+        .pdf-mode .export-btn-container,
+        .pdf-mode .controls-panel,
+        .pdf-mode .credits {
+            display: none !important;
+        }
+
+        .pdf-mode .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pdf-mode .glass-card,
+        .pdf-mode .chart-box,
+        .pdf-mode .full-width-chart,
+        .pdf-mode .table-wrapper {
+            background: #ffffff !important;
+            border: 1px solid #cccccc !important;
+            box-shadow: none !important;
+        }
+
+        .pdf-mode .result-value {
+            text-shadow: none !important;
+            color: #000 !important;
+            font-size: 3rem !important;
+        }
+
+        .pdf-mode .main-result::before {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <div class="container" id="pdf-content">
+        <header>
+            <h1>Calculadora de Préstamos</h1>
+            <p class="intro">
+                Calculadora financiera diseñada para realizar análisis de alternativas de crédito.
+                Basada en los modelos de <strong>Ingeniería Económica</strong> de Amortización Francesa (Anualidades
+                Ordinarias Vencidas),
+                permite proyectar diagramas de flujo de efectivo y saldos deudores precisos para la toma de decisiones.
+            </p>
+            <div class="currency-selector">
+                <button class="currency-btn active" data-cur="$">USD ($)</button>
+                <button class="currency-btn" data-cur="€">EUR (€)</button>
+                <button class="currency-btn" data-cur="£">GBP (£)</button>
+                <button class="currency-btn" data-cur="Bs.">VES (Bs.)</button>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Left: Controls -->
+            <div class="glass-card controls-panel">
+                <div class="instructions">
+                    <strong>Instrucciones:</strong> Mueve el botón de la barra o ingresa el número directamente para la
+                    cantidad del préstamo, tasa de interés y los meses de pago.
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>Cantidad del Préstamo</label>
+                        <input type="number" id="valMonto" value="10000" min="100" max="10000000" step="100">
+                    </div>
+                    <input type="range" id="slMonto" value="10000" min="100" max="100000" step="100">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>Tasa de Interés (%)</label>
+                        <input type="number" id="valTasa" value="12" min="0.1" max="100" step="0.1">
+                    </div>
+                    <input type="range" id="slTasa" value="12" min="0.1" max="100" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <label>Meses de Pago</label>
+                        <input type="number" id="valPlazo" value="24" min="1" max="360" step="1">
+                    </div>
+                    <input type="range" id="slPlazo" value="24" min="1" max="120" step="1">
+                </div>
+
+                <button class="btn-calc" id="btnCalcular">Calcular</button>
+            </div>
+
+            <!-- Right: Results Dashboard -->
+            <div class="results-panel">
+                <div class="main-result">
+                    <div class="result-label">Cuota Mensual</div>
+                    <div class="result-value">
+                        <span class="cur-symbol">$</span>
+                        <span id="txtCuota">0.00</span>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <div class="chart-label">Capital vs Intereses</div>
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-label">Diagrama de Flujo de Efectivo</div>
+                        <canvas id="cashflowChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="full-width-chart">
+                    <div class="chart-label">Cuadro de Saldo de Efectivo</div>
+                    <canvas id="balanceChart"></canvas>
+                </div>
+
+                <div class="analysis-section" id="txtAnalisis">
+                    Realiza un cálculo para obtener el análisis y reflexión crítica.
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Cuota (<span class="cur-symbol-th">$</span>)</th>
+                                <th>Capital (<span class="cur-symbol-th">$</span>)</th>
+                                <th>Intereses (<span class="cur-symbol-th">$</span>)</th>
+                                <th>Saldo Restante (<span class="cur-symbol-th">$</span>)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaAmortizacion">
+                            <!-- Rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-btn-container">
+            <button class="btn-export" id="btnPDF">Generar Reporte PDF</button>
+        </div>
+    </div>
+
+    <div class="credits" id="creditsDiv">
+        <div class="credits-inner">
+            <h3>Créditos</h3>
+            <p>Nombres de los Estudiantes</p>
+            <div class="credits-email">Para cualquier consulta escribir a la dirección del correo
+                electrónico:<br>XXX@ucab.edu.ve</div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Sync Functions
+        const syncInputs = (sliderId, inputId) => {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+            });
+
+            input.addEventListener('change', () => {
+                slider.value = input.value;
+            });
+        };
+
+        syncInputs('slMonto', 'valMonto');
+        syncInputs('slTasa', 'valTasa');
+        syncInputs('slPlazo', 'valPlazo');
+
+        // Currency Control
+        let currency = '$';
+        document.querySelectorAll('.currency-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currency = e.target.dataset.cur;
+                updateCurrencySymbols();
+                if (chartInstances.pie) calculateLoan(); // Recalculate visually
+            });
+        });
+
+        function updateCurrencySymbols() {
+            document.querySelectorAll('.cur-symbol').forEach(el => el.textContent = currency);
+            document.querySelectorAll('.cur-symbol-th').forEach(el => el.textContent = currency);
+        }
+
+        function formatMoney(amount) {
+            return parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Charts Init
+        let chartInstances = { pie: null, cashflow: null, balance: null };
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+
+        function renderCharts(principal, totalInteres, cashFlowData, balanceData, labels) {
+            // Destroy existing instances
+            if (chartInstances.pie) chartInstances.pie.destroy();
+            if (chartInstances.cashflow) chartInstances.cashflow.destroy();
+            if (chartInstances.balance) chartInstances.balance.destroy();
+
+            // 1. Pie Chart
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            chartInstances.pie = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Capital', 'Intereses Totales'],
+                    datasets: [{
+                        data: [principal, totalInteres],
+                        backgroundColor: ['#00f2fe', '#f5576c'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // 2. Cash Flow Diagram (Bar Chart)
+            const ctxCashflow = document.getElementById('cashflowChart').getContext('2d');
+            chartInstances.cashflow = new Chart(ctxCashflow, {
+                type: 'bar',
+                data: {
+                    labels: ['M0', ...labels],
+                    datasets: [{
+                        label: 'Flujo ($)',
+                        data: cashFlowData,
+                        backgroundColor: (ctx) => ctx.raw > 0 ? '#10b981' : '#ef4444',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            ticks: { callback: function (value) { return currency + formatMoney(Math.abs(value)); } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) { return currency + formatMoney(Math.abs(context.raw)); }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 3. Cash Balance Chart (Line Chart)
+            const ctxBalance = document.getElementById('balanceChart').getContext('2d');
+            chartInstances.balance = new Chart(ctxBalance, {
+                type: 'line',
+                data: {
+                    labels: ['M0', ...labels],
+                    datasets: [{
+                        label: 'Saldo Restante ($)',
+                        data: balanceData,
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function (value) { return currency + formatMoney(value); } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Animate numbers Counting Effect
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Ease out
+                const easeOut = progress * (2 - progress);
+                let current = start + easeOut * (end - start);
+                obj.innerHTML = formatMoney(current);
+                if (progress < 1) window.requestAnimationFrame(step);
+                else obj.innerHTML = formatMoney(end);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Main Calculation Function
+        function calculateLoan() {
+            const P = parseFloat(document.getElementById('valMonto').value); // Capital
+            const i_anual = parseFloat(document.getElementById('valTasa').value); // Annual Rate
+            const n = parseInt(document.getElementById('valPlazo').value); // Months
+
+            if (isNaN(P) || isNaN(i_anual) || isNaN(n) || P <= 0 || i_anual <= 0 || n <= 0) {
+                return alert("Revisa los valores ingresados. Todos deben ser mayores a 0.");
+            }
+
+            const i_mensual = (i_anual / 100) / 12;
+
+            // Equation for an ordinary annuity present worth
+            // A = P * [ i(1+i)^n ] / [ (1+i)^n - 1 ]
+            let A = P * ((i_mensual * Math.pow(1 + i_mensual, n)) / (Math.pow(1 + i_mensual, n) - 1));
+
+            // Execute animation for the big display
+            const targetVal = parseFloat(A.toFixed(2));
+            const objCuota = document.getElementById('txtCuota');
+            animateValue(objCuota, 0, targetVal, 1500);
+
+            let htmlTabla = '';
+            let saldo = P;
+            let sumIntereses = 0;
+
+            let labels = [];
+            let cashFlowData = [P]; // at t=0 there's a positive cash flow for the borrower
+            let balanceData = [P];  // Principal remaining
+
+            for (let mes = 1; mes <= n; mes++) {
+                let interestPayment = saldo * i_mensual;
+                let principalPayment = A - interestPayment;
+
+                // Adjust last month rounding error
+                if (mes === n) {
+                    principalPayment = saldo;
+                    A = principalPayment + interestPayment;
+                }
+
+                saldo -= principalPayment;
+                if (saldo < 0.01) saldo = 0;
+
+                sumIntereses += interestPayment;
+
+                labels.push('M' + mes);
+                cashFlowData.push(-A); // Regular payments are negative cash flows
+                balanceData.push(saldo);
+
+                htmlTabla += `
+                    <tr>
+                        <td>${mes}</td>
+                        <td>${formatMoney(A)}</td>
+                        <td>${formatMoney(principalPayment)}</td>
+                        <td>${formatMoney(interestPayment)}</td>
+                        <td>${formatMoney(saldo)}</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('tablaAmortizacion').innerHTML = htmlTabla;
+            renderCharts(P, sumIntereses, cashFlowData, balanceData, labels);
+
+            // Reflection Paragraph
+            const ratio = (sumIntereses / P * 100).toFixed(2);
+            document.getElementById('txtAnalisis').innerHTML = `
+                <strong>Análisis Crítico de Ingeniería Económica:</strong><br>
+                Utilizando el modelo matemático de amortización de una <em>Anualidad Ordinaria Vencida</em>, 
+                para un financiamiento de valor presente equivalente a <strong>${currency}${formatMoney(P)}</strong> 
+                y operando bajo una tasa nominal anual del <strong>${i_anual}%</strong>, 
+                es requerido un pago nivelado constante de <strong>${currency}${formatMoney(A)}</strong> al final de cada uno de los <strong>${n} meses</strong>.<br><br>
+                El diagrama de flujo de efectivo ilustra el <em>capital intake</em> inicial en el periodo 0, 
+                seguido de la serie de egresos constantes. Al finalizar el plazo, el prestatario habrá abonado 
+                un costo financiero o intereses totales de <strong>${currency}${formatMoney(sumIntereses)}</strong>. 
+                Esto refleja un incremento agregado de <strong>${ratio}%</strong> en relación al valor principal solicitado. 
+                Observando el cuadro de saldo de efectivo (Balance Chart), se evidencia la concavidad inherente a este modelo, 
+                donde la proporción de intereses de cada cuota es mayor al inicio y el abono a capital se acelera al acercarse la madurez del financiamiento.
+            `;
+        }
+
+        document.getElementById('btnCalcular').addEventListener('click', calculateLoan);
+
+        // Credits Interactivity
+        const creditsDiv = document.getElementById('creditsDiv');
+        creditsDiv.addEventListener('click', () => {
+            creditsDiv.classList.toggle('tilted');
+        });
+
+        // PDF Generation
+        document.getElementById('btnPDF').addEventListener('click', () => {
+            const element = document.getElementById('pdf-content');
+            element.classList.add('pdf-mode');
+
+            // Force reflow for styles to apply before capturing
+            setTimeout(() => {
+                const opt = {
+                    margin: 10,
+                    filename: 'CalculadoraFinanciera_Reporte.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                html2pdf().from(element).set(opt).save().then(() => {
+                    element.classList.remove('pdf-mode');
+                });
+            }, 100);
+        });
+
+        // Initial Calculation to populate dashboard
+        setTimeout(calculateLoan, 500);
+
+    </script>
+</body>
+
+</html>
