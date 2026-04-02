@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import Swal from 'sweetalert2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -65,39 +66,50 @@ export default function App() {
     handleCalculate();
   }, []);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const element = pdfContainerRef.current;
     
-    // Add print mode class
+    // Configurar estado de impresión
     element.classList.add('print-mode');
     
-    const opt = {
-      margin:       10,
-      filename:     'Reporte_Calculadora_Prestamos.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-
+    // Esperar a que los estilos se apliquen
+    await new Promise(r => setTimeout(r, 300));
+    
     if (!Capacitor.isNativePlatform()) {
-      // Comportamiento WEB puro: .save() nativo del browser
-      html2pdf().from(element).set(opt).save().then(() => {
-        element.classList.remove('print-mode');
-        Swal.fire({
-          title: 'Descarga Completada',
-          text: 'Se ha descargado el PDF en tu navegador.',
-          icon: 'success',
-          confirmButtonColor: '#4f46e5'
-        });
-      });
+      // WEB puro: Nada supera la estructura estructurada del motor de impresión nativo del navegador.
+      window.print();
+      element.classList.remove('print-mode');
       return;
     }
 
-    // Comportamiento MÓVIL (APK)
-    html2pdf().from(element).set(opt).output('datauristring').then(async (pdfString) => {
-      element.classList.remove('print-mode');
-      const base64Data = pdfString.split(',')[1];
+    try {
+      // Comportamiento MÓVIL (APK): Renderizado nativo
+      Swal.fire({
+         title: 'Procesando...',
+         text: 'Estructurando tu documento PDF, por favor espera.',
+         allowOutsideClick: false,
+         didOpen: () => { Swal.showLoading(); }
+      });
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
       
+      element.classList.remove('print-mode');
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // Si la imagen es muy larga, la partimos o la dejamos fluida en una pagina extendida
+      pdf.addImage(imgData, 'JPEG', 0, 10, pdfWidth, pdfHeight);
+      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      
+      Swal.close();
+
       const result = await Swal.fire({
         title: 'Opciones de Exportación',
         text: '¿Cómo deseas guardar tu reporte?',
@@ -115,8 +127,8 @@ export default function App() {
       if (result.isConfirmed) {
         try {
           await Filesystem.writeFile({
-            path: opt.filename,
-            data: base64Data,
+            path: 'Reporte_Calculadora_Prestamos.pdf',
+            data: pdfBase64,
             directory: Directory.Documents
           });
           Swal.fire({ title: 'PDF Generado', text: 'Se ha guardado exitosamente en tus Documentos.', icon: 'success' });
@@ -126,8 +138,8 @@ export default function App() {
       } else if (result.isDenied) {
         try {
           const savedFile = await Filesystem.writeFile({
-            path: opt.filename,
-            data: base64Data,
+            path: 'Reporte_Calculadora_Prestamos.pdf',
+            data: pdfBase64,
             directory: Directory.Cache
           });
           await Share.share({ title: 'Reporte de Préstamo', url: savedFile.uri });
@@ -135,7 +147,10 @@ export default function App() {
              Swal.fire({ title: 'Error de Compartir', text: 'Fallo: ' + e.message, icon: 'error' });
         }
       }
-    });
+    } catch (e) {
+      element.classList.remove('print-mode');
+      Swal.fire('Error Grave', 'Hubo un problema generando el documento.', 'error');
+    }
   };
 
   return (
