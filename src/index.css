@@ -1,102 +1,129 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #4f46e5;
-  --color-primary-dark: #3730a3;
+  --color-primary:   #4f46e5;
   --color-secondary: #0ea5e9;
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
-  --color-surface: #ffffff;
-  --color-background: #f1f5f9;
+  --color-success:   #10b981;
+  --color-danger:    #ef4444;
+  --color-warning:   #f59e0b;
+  --color-surface:   #ffffff;
+  --color-bg:        #f1f5f9;
   --font-sans: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; }
   body {
-    @apply bg-slate-100 text-slate-800 antialiased;
+    height: 100%;
+    background: #f1f5f9;
     font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+  #root { height: 100%; }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 99px; }
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* ====================== PRINT / PDF STYLES ====================== */
+/* ── Range input thumb color via accent ── */
+input[type=range] { -webkit-appearance: none; height: 6px; border-radius: 99px; cursor: pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #4f46e5; box-shadow: 0 1px 4px rgba(79,70,229,.4); }
+
+/* ── Sidebar overlay (mobile) ── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.45);
+  z-index: 39;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Sidebar drawer ── */
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  background: #ffffff;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e2e8f0;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-drawer.open  { transform: translateX(0); }
+.sidebar-drawer.closed { transform: translateX(-100%); }
+
+/* Desktop: sidebar always visible, inline */
+@media (min-width: 1024px) {
+  .sidebar-drawer {
+    position: relative;
+    transform: none !important;
+    flex-shrink: 0;
+    transition: width 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar-drawer.open  { width: 300px; }
+  .sidebar-drawer.closed { width: 0; overflow: hidden; border: none; }
+}
+
+/* ── Print / PDF ── */
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  
-  body { background: #fff !important; font-family: "Inter", sans-serif !important; }
-  
-  .no-print { display: none !important; }
-  
-  .print-only { display: block !important; }
-  
-  /* Make all cards visible on print */
-  .pdf-page {
-    background: #fff !important;
+
+  body { background: #fff !important; margin: 0; padding: 0; }
+
+  /* Hide UI chrome */
+  .no-print, .sidebar-drawer, .sidebar-overlay, header { display: none !important; }
+
+  /* Make print content fill the page */
+  .print-content {
+    display: block !important;
+    width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  /* KPI cards print adjustments */
-  .kpi-card {
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: none !important;
-    break-inside: avoid;
-  }
-  
-  /* Chart wrappers */
-  .chart-box {
+  /* Print header */
+  .pdf-report-header { display: block !important; }
+
+  /* Cards */
+  .kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+  .kpi-card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; padding: 10px !important; }
+
+  /* Tabs: show all content */
+  .tab-panel { display: block !important; }
+
+  /* Charts */
+  .chart-box { 
     border: 1px solid #e2e8f0 !important;
     box-shadow: none !important;
     break-inside: avoid;
     page-break-inside: avoid;
+    margin-bottom: 16px !important;
   }
+  .charts-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 
   /* Table */
-  .amort-table {
-    break-inside: auto;
-  }
-  .amort-table tr {
-    break-inside: avoid;
-    break-after: auto;
-  }
+  .amort-table { break-inside: auto; font-size: 8pt !important; }
+  .amort-table tr { break-inside: avoid; }
+  .amort-table-wrapper { max-height: none !important; overflow: visible !important; }
 
-  /* Sidebar no imprime */
-  .sidebar-panel { display: none !important; }
-  
-  /* Full width content on print */
-  .main-content {
-    width: 100% !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-
-  /* Header simplified */
-  .pdf-header {
-    text-align: center !important;
-    padding: 16px 0 !important;
-    border-bottom: 2px solid #4f46e5 !important;
-    margin-bottom: 24px !important;
-  }
-  
-  /* Analysis block must show */
-  .analysis-block {
+  /* Analysis */
+  .analysis-block { 
     background: #f8f9ff !important;
     border: 1px solid #c7d2fe !important;
     break-inside: avoid;
     page-break-inside: avoid;
+    margin-bottom: 16px !important;
   }
 
-  h1 { font-size: 22pt !important; }
-  h2 { font-size: 16pt !important; }
-  h3 { font-size: 13pt !important; }
-  p, td, th { font-size: 9pt !important; }
+  h1 { font-size: 20pt !important; }
+  h2, h3 { font-size: 13pt !important; }
+  p, td, th, li { font-size: 9pt !important; }
 }
