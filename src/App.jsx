@@ -4,6 +4,8 @@ import Swal from 'sweetalert2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import html2pdf from 'html2pdf.js';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileDown, Calculator, Landmark, HandCoins, ArrowRight } from 'lucide-react';
 import { calculateAmortization } from './utils/finance';
@@ -79,26 +81,75 @@ export default function App() {
 
     html2pdf().from(element).set(opt).output('datauristring').then(async (pdfString) => {
       element.classList.remove('print-mode');
-      const base64Data = pdfString.split(',')[1];
-      try {
-        await Filesystem.writeFile({
-          path: 'Reporte_Calculadora_Prestamos.pdf',
-          data: base64Data,
-          directory: Directory.Documents
-        });
+      
+      // Comportamiento WEB: Lo descarga el navegador automáticamente como un archivo <a> normal
+      if (!Capacitor.isNativePlatform()) {
+        const link = document.createElement('a');
+        link.href = pdfString;
+        link.download = opt.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
         Swal.fire({
-          title: 'PDF Generado',
-          text: 'Se ha guardado exitosamente en tus Documentos.',
+          title: 'Descarga Completada',
+          text: 'Se ha descargado el PDF en tu ordenador.',
           icon: 'success',
           confirmButtonColor: '#4f46e5'
         });
-      } catch (e) {
-        Swal.fire({
-          title: 'Error Detección Nativa',
-          text: 'No se ha podido guardar o no tienen permisos: ' + e.message,
-          icon: 'error',
-          confirmButtonColor: '#ef4444'
-        });
+        return;
+      }
+
+      // Comportamiento MÓVIL (APK): Menú interactivo nativo
+      const base64Data = pdfString.split(',')[1];
+      
+      const result = await Swal.fire({
+        title: 'Opciones de Exportación',
+        text: '¿Cómo deseas guardar tu reporte?',
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonColor: '#4f46e5',
+        denyButtonColor: '#10b981',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: '<i class="lucide lucide-save"></i> Guardar Archivo',
+        denyButtonText: '<i class="lucide lucide-share-2"></i> Compartir App (Ej. WhatsApp)',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        // Guardar directo a Documentos
+        try {
+          await Filesystem.writeFile({
+            path: opt.filename,
+            data: base64Data,
+            directory: Directory.Documents
+          });
+          Swal.fire({
+            title: 'PDF Generado',
+            text: 'Se ha guardado exitosamente en tus Documentos.',
+            icon: 'success',
+            confirmButtonColor: '#4f46e5'
+          });
+        } catch (e) {
+          Swal.fire({ title: 'Error Detección Nativa', text: 'Permiso denegado: ' + e.message, icon: 'error' });
+        }
+      } else if (result.isDenied) {
+        // Guardar temporalmente y Compartir por ShareSheet
+        try {
+          const savedFile = await Filesystem.writeFile({
+            path: opt.filename,
+            data: base64Data,
+            directory: Directory.Cache
+          });
+          await Share.share({
+            title: 'Reporte de Préstamo',
+            dialogTitle: 'Compartir Análisis Vía...',
+            url: savedFile.uri
+          });
+        } catch (e) {
+             Swal.fire({ title: 'Error de Compartir', text: 'Falló la comunicación nativa: ' + e.message, icon: 'error' });
+        }
       }
     });
   };

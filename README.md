@@ -1,16 +1,7 @@
-# React + Vite
+# Calculadora de Préstamos - Ingeniería Económica
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Esta herramienta financiera sistematiza la evaluación de alternativas de financiamiento aplicando el principio del valor del dinero en el tiempo y el modelo matemático de amortización por anualidad ordinaria vencida (cuotas fijas). Al ingresar parámetros como el capital principal, la tasa nominal y los plazos, el sistema proyecta estructuradamente el diagrama de flujo de efectivo y separa con precisión qué porcentaje de los desembolsos corresponden a pago de intereses versus amortización real de la deuda a lo largo del tiempo. Permite a los usuarios realizar una reflexión crítica de sus decisiones en base a los sobreprecios impuestos por el crédito adquirido, vital en los estudios de Ingeniería Económica.
 
-Currently, two official plugins are available:
+Esta aplicación ha sido desarrollada bajo una arquitectura "Mobile First" empleando tecnologías modernas front-end: **React.js** empacado mediante **Vite**, estilizado responsivamente con el framework **Tailwind CSS v4**, y orquestado mediante animaciones fluidas de **Framer Motion**. Gráficos precisos interactivos logrados vía **Chart.js**. Finalmente, su versión móvil ha sido procesada hacia un entorno nativo instalable (`.apk`) e interacción con sistema de empaquetado **CapacitorJS**, garantizando conectividad orgánica con los repositorios compartidos de Android.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+🔗 **Visualización del Entorno Web:** [https://mjsanchezr.github.io/Ingenier-a-Econ-mica-App/](https://mjsanchezr.github.io/Ingenier-a-Econ-mica-App/)
