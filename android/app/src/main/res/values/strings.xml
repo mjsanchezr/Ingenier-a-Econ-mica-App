@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Calculadora Financiera</string>
+    <string name="title_activity_main">Calculadora Financiera</string>
+    <string name="package_name">com.ucab.calculadora</string>
+    <string name="custom_url_scheme">com.ucab.calculadora</string>
+</resources>
