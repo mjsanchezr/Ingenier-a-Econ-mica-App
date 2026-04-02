@@ -79,28 +79,23 @@ export default function App() {
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
-    html2pdf().from(element).set(opt).output('datauristring').then(async (pdfString) => {
-      element.classList.remove('print-mode');
-      
-      // Comportamiento WEB: Lo descarga el navegador automáticamente como un archivo <a> normal
-      if (!Capacitor.isNativePlatform()) {
-        const link = document.createElement('a');
-        link.href = pdfString;
-        link.download = opt.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
+    if (!Capacitor.isNativePlatform()) {
+      // Comportamiento WEB puro: .save() nativo del browser
+      html2pdf().from(element).set(opt).save().then(() => {
+        element.classList.remove('print-mode');
         Swal.fire({
           title: 'Descarga Completada',
-          text: 'Se ha descargado el PDF en tu ordenador.',
+          text: 'Se ha descargado el PDF en tu navegador.',
           icon: 'success',
           confirmButtonColor: '#4f46e5'
         });
-        return;
-      }
+      });
+      return;
+    }
 
-      // Comportamiento MÓVIL (APK): Menú interactivo nativo
+    // Comportamiento MÓVIL (APK)
+    html2pdf().from(element).set(opt).output('datauristring').then(async (pdfString) => {
+      element.classList.remove('print-mode');
       const base64Data = pdfString.split(',')[1];
       
       const result = await Swal.fire({
@@ -113,42 +108,31 @@ export default function App() {
         denyButtonColor: '#10b981',
         cancelButtonColor: '#ef4444',
         confirmButtonText: '<i class="lucide lucide-save"></i> Guardar Archivo',
-        denyButtonText: '<i class="lucide lucide-share-2"></i> Compartir App (Ej. WhatsApp)',
+        denyButtonText: '<i class="lucide lucide-share-2"></i> Compartir App (WhatsApp)',
         cancelButtonText: 'Cancelar'
       });
 
       if (result.isConfirmed) {
-        // Guardar directo a Documentos
         try {
           await Filesystem.writeFile({
             path: opt.filename,
             data: base64Data,
             directory: Directory.Documents
           });
-          Swal.fire({
-            title: 'PDF Generado',
-            text: 'Se ha guardado exitosamente en tus Documentos.',
-            icon: 'success',
-            confirmButtonColor: '#4f46e5'
-          });
+          Swal.fire({ title: 'PDF Generado', text: 'Se ha guardado exitosamente en tus Documentos.', icon: 'success' });
         } catch (e) {
           Swal.fire({ title: 'Error Detección Nativa', text: 'Permiso denegado: ' + e.message, icon: 'error' });
         }
       } else if (result.isDenied) {
-        // Guardar temporalmente y Compartir por ShareSheet
         try {
           const savedFile = await Filesystem.writeFile({
             path: opt.filename,
             data: base64Data,
             directory: Directory.Cache
           });
-          await Share.share({
-            title: 'Reporte de Préstamo',
-            dialogTitle: 'Compartir Análisis Vía...',
-            url: savedFile.uri
-          });
+          await Share.share({ title: 'Reporte de Préstamo', url: savedFile.uri });
         } catch (e) {
-             Swal.fire({ title: 'Error de Compartir', text: 'Falló la comunicación nativa: ' + e.message, icon: 'error' });
+             Swal.fire({ title: 'Error de Compartir', text: 'Fallo: ' + e.message, icon: 'error' });
         }
       }
     });
