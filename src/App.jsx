@@ -37,6 +37,80 @@ const fmt = (v, cur = '$') =>
   `${cur}${Number(v).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtN = (v, d = 2) => Number(v).toFixed(d);
 
+// ── Definiciones de Ingeniería Económica para cada KPI ───────────────
+const KPI_INFO = {
+  'Cuota Mensual': {
+    icon: '💳',
+    formula: 'A = P · [ r·(1+r)ⁿ ] / [ (1+r)ⁿ − 1 ]',
+    title: 'Cuota Mensual (Anualidad A)',
+    body: `
+      <p style="margin-bottom:10px">En Ingeniería Económica, la <strong>cuota mensual</strong> representa el flujo de efectivo constante periódico derivado del modelo de <em>Anualidad Ordinaria Vencida</em>.</p>
+      <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#3730a3;margin:10px 0">
+        A = P · [ r·(1+r)ⁿ ] / [ (1+r)ⁿ − 1 ]
+      </div>
+      <p>Donde <strong>P</strong> es el capital prestado, <strong>r</strong> la tasa mensual efectiva y <strong>n</strong> el plazo en meses. La cuota es <em>constante</em> porque aplica el principio de <strong>equivalencia financiera</strong>: el valor presente de todos los pagos iguala exactamente al capital recibido hoy.</p>
+      <p style="margin-top:8px;color:#64748b;font-size:0.85em">↗ Aumentar P o r eleva A · ↘ Aumentar n reduce A pero incrementa el total de intereses pagados.</p>
+    `
+  },
+  'Total Intereses': {
+    icon: '📈',
+    title: 'Total de Intereses Pagados',
+    body: `
+      <p style="margin-bottom:10px">Representa el <strong>costo financiero neto</strong> del crédito: la diferencia entre el total desembolsado y el capital recibido.</p>
+      <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#be123c;margin:10px 0">
+        Intereses Totales = (A × n) − P
+      </div>
+      <p>Desde la perspectiva del <strong>Valor del Dinero en el Tiempo (TVM)</strong>, los intereses compensan al acreedor por el costo de oportunidad de no disponer del capital durante el plazo. El monto crece exponencialmente con la tasa y linealmente con el plazo.</p>
+      <p style="margin-top:8px;color:#64748b;font-size:0.85em">↗ A mayor plazo o mayor tasa, mayor es este valor. Es el indicador más directo del costo real del préstamo.</p>
+    `
+  },
+  'Total a Pagar': {
+    icon: '💰',
+    title: 'Total a Pagar (Monto Total Desembolsado)',
+    body: `
+      <p style="margin-bottom:10px">Suma acumulada de todos los pagos periódicos durante la vida del crédito.</p>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#92400e;margin:10px 0">
+        Total = A × n = P + Intereses Totales
+      </div>
+      <p>Este valor cuantifica el <strong>flujo de caja total de salida</strong> durante el período del préstamo. En un diagrama de flujo de efectivo (CFD), corresponde a la suma de todos los vectores descendentes. Permite evaluar si el beneficio obtenido con el préstamo supera su costo de oportunidad.</p>
+    `
+  },
+  'Sobrecosto': {
+    icon: '⚠️',
+    title: 'Sobrecosto Financiero (%)',
+    body: `
+      <p style="margin-bottom:10px">Mide el <strong>porcentaje de intereses pagados sobre el capital original</strong>. Es el indicador más claro del costo relativo del crédito.</p>
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#5b21b6;margin:10px 0">
+        Sobrecosto = (Intereses Totales / P) × 100
+      </div>
+      <p>En Ingeniería Económica se relaciona con el concepto de <em>costo de oportunidad</em>: si este % supera el rendimiento que obtendrías invirtiendo ese mismo capital, el préstamo resulta financieramente desventajoso. La Reserva Federal (FED, 2026) mantiene su tasa de referencia en 3.50–3.75%, lo que sirve como benchmark de mínimo rendimiento libre de riesgo.</p>
+    `
+  },
+  'TIR Anual': {
+    icon: '📊',
+    title: 'TIR Anual (Tasa Interna de Retorno Efectiva)',
+    body: `
+      <p style="margin-bottom:10px">La <strong>Tasa Interna de Retorno (TIR)</strong> equivale aquí a la tasa de interés efectiva anual del préstamo.</p>
+      <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#064e3b;margin:10px 0">
+        TIR_anual = (1 + r_mensual)¹² − 1
+      </div>
+      <p>Convierte la tasa nominal en su equivalente anual efectiva, considerando la capitalización mensual. Es el <strong>verdadero costo anual del crédito</strong> para el deudor. Si la TIR supera tu tasa mínima atractiva de retorno (TMAR), el préstamo es costoso respecto a tus alternativas de inversión.</p>
+      <p style="margin-top:8px;color:#64748b;font-size:0.85em">Ejemplo: una tasa nominal del 14% anual genera una TIR de 14.93% anual efectivo por efecto del interés compuesto mensual.</p>
+    `
+  },
+  'Plazo': {
+    icon: '📅',
+    title: 'Plazo (Período n)',
+    body: `
+      <p style="margin-bottom:10px">El <strong>plazo n</strong> define el horizonte temporal del modelo de amortización y es una de las tres variables principales de la ecuación.</p>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-family:monospace;font-weight:700;text-align:center;color:#1e40af;margin:10px 0">
+        n = Número de períodos de pago (meses)
+      </div>
+      <p>En el análisis del <strong>Valor del Tiempo del Dinero</strong>, extender el plazo: (1) reduce la cuota mensual A, (2) incrementa el total de intereses pagados y (3) alarga la curva del saldo deudor. Existe un trade-off entre <em>liquidez mensual</em> (cuota baja) y <em>costo financiero total</em>. La decisión óptima se evalúa equiparando el Valor Presente Neto (VPN) de los flujos con la TMAR del agente.</p>
+    `
+  },
+};
+
 // ── Opciones base de todos los charts ────────────────────────────────
 const baseChartOpts = () => ({
   responsive: true,
@@ -59,14 +133,28 @@ const baseChartOpts = () => ({
 // SUB-COMPONENTES
 // ═══════════════════════════════════════════════════════════════════
 
-// ── KPI Card ─────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, icon: Icon, grad = 'from-indigo-500 to-indigo-600' }) {
+// ── KPI Card clicable ─────────────────────────────────────────────────
+function KpiCard({ label, value, sub, icon: Icon, grad = 'from-indigo-500 to-indigo-600', kpiKey }) {
+  const handleClick = () => {
+    const info = KPI_INFO[kpiKey || label];
+    if (!info) return;
+    Swal.fire({
+      title: `${info.icon || '💡'} ${info.title}`,
+      html: info.body,
+      confirmButtonColor: '#4f46e5',
+      confirmButtonText: 'Entendido',
+      width: 520,
+      customClass: { popup: 'text-left rounded-2xl', title: 'text-lg font-bold text-slate-800', htmlContainer: 'text-sm text-slate-600 leading-relaxed text-left' }
+    });
+  };
   return (
     <motion.div
       key={value}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="kpi-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-start gap-3 min-w-0"
+      onClick={handleClick}
+      className="kpi-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-start gap-3 min-w-0 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 select-none"
+      title="Click para más información"
     >
       <div className={`p-2.5 rounded-xl bg-gradient-to-br ${grad} flex-shrink-0`}>
         <Icon size={18} className="text-white" />
@@ -75,6 +163,7 @@ function KpiCard({ label, value, sub, icon: Icon, grad = 'from-indigo-500 to-ind
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 truncate">{label}</p>
         <p className="text-lg font-extrabold text-slate-800 truncate leading-tight">{value}</p>
         {sub && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</p>}
+        <p className="text-[9px] text-indigo-400 mt-1 font-semibold">Toca para más info ›</p>
       </div>
     </motion.div>
   );
@@ -141,36 +230,71 @@ function CollapseBlock({ icon: Icon, label, accentClass, children }) {
   );
 }
 
-// ── Créditos ─────────────────────────────────────────────────────────
+// ── Créditos + Contacto ───────────────────────────────────────────────
+const TEAM = [
+  'Mario José Sánchez Rodríguez',
+  'Verónica Gabriela Palacios Godoy',
+  'Nicole Cristina Gruber Pérez',
+  'Luigi José Ravelli De Sousa',
+  'Giovanny Andrés Parra Quintero',
+  'Pablo Manuel Bustamante Segovia',
+];
+
 function Credits() {
-  const [tilt, setTilt] = useState(false);
+  const [open, setOpen] = useState(false);
   return (
-    <div className="p-4 border-t border-slate-100">
-      <motion.div
-        className="cursor-pointer select-none"
-        onClick={() => setTilt(t => !t)}
-        animate={tilt ? { rotateX: 10, rotateZ: -2, scale: 1.03 } : { rotateX: 0, rotateZ: 0, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-        style={{ perspective: 800, transformStyle: 'preserve-3d' }}
+    <div className="p-4 border-t border-slate-100 space-y-3">
+      {/* Créditos */}
+      <div
+        className={`rounded-xl border cursor-pointer select-none transition-colors ${
+          open ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+        }`}
+        onClick={() => setOpen(o => !o)}
       >
-        <div className={`rounded-xl border p-3.5 transition-colors ${tilt ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-50 border-slate-200'}`}>
-          <p className={`text-[9px] font-bold uppercase tracking-widest mb-0.5 ${tilt ? 'text-indigo-300' : 'text-slate-400'}`}>Créditos</p>
-          <p className={`font-bold text-sm ${tilt ? 'text-white' : 'text-slate-700'}`}>Estudiantes UCAB</p>
-          <AnimatePresence>
-            {tilt && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-start gap-1.5 text-indigo-100 mt-3 text-xs">
-                  <ArrowRight size={11} className="mt-0.5 flex-shrink-0" />
-                  <span>Consultas al coordinador: <strong className="text-white">coordinador@ucab.edu.ve</strong></span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex items-center justify-between px-3.5 py-3">
+          <div>
+            <p className={`text-[9px] font-bold uppercase tracking-widest mb-0.5 ${open ? 'text-indigo-300' : 'text-slate-400'}`}>Créditos del Proyecto</p>
+            <p className={`font-bold text-sm ${open ? 'text-white' : 'text-slate-700'}`}>Estudiantes UCAB</p>
+          </div>
+          {open ? <ChevronUp size={14} className="text-indigo-200" /> : <ChevronDown size={14} className="text-slate-400" />}
         </div>
-      </motion.div>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <ul className="px-3.5 pb-3 space-y-1.5">
+                {TEAM.map((name, i) => (
+                  <li key={i} className="flex items-start gap-2 text-indigo-100 text-xs">
+                    <span className="text-indigo-300 font-bold flex-shrink-0 w-4 text-right">{i + 1}.</span>
+                    <span className="leading-snug">{name}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Contacto */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Información de Contacto</p>
+        <div className="space-y-1.5 text-xs text-slate-600">
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-400 font-bold flex-shrink-0">✉</span>
+            <a href="mailto:mjsanchez.24@est.ucab.edu.ve" className="text-indigo-600 hover:underline truncate">
+              mjsanchez.24@est.ucab.edu.ve
+            </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-400 font-bold flex-shrink-0">📞</span>
+            <a href="tel:+584129229895" className="text-slate-700 hover:text-indigo-600 transition">
+              +58 412-9229895
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -566,12 +690,12 @@ export default function App() {
 
               {/* ── KPI CARDS ── */}
               <div className="kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                <KpiCard label="Cuota Mensual"   value={fmt(results.monthlyPayment, currency)} icon={DollarSign}  grad="from-indigo-500 to-indigo-600"/>
-                <KpiCard label="Total Intereses" value={fmt(results.totalIntereses, currency)}  icon={Percent}     grad="from-rose-500 to-rose-600"/>
-                <KpiCard label="Total a Pagar"   value={fmt(results.totalPaid, currency)}       icon={TrendingDown} grad="from-amber-500 to-amber-600"/>
-                <KpiCard label="Sobrecosto"      value={`${fmtN(results.effectiveCost)}%`} sub="sobre capital" icon={AlertCircle} grad="from-violet-500 to-violet-600"/>
-                <KpiCard label="TIR Anual"       value={`${fmtN(results.tir_anual, 3)}%`} sub="Tasa efectiva" icon={Activity}    grad="from-emerald-500 to-emerald-600"/>
-                <KpiCard label="Plazo"           value={`${plazo} meses`} sub={`${fmtN(plazo / 12, 1)} años`} icon={Clock} grad="from-sky-500 to-sky-600"/>
+                <KpiCard label="Cuota Mensual"   value={fmt(results.monthlyPayment, currency)} icon={DollarSign}  grad="from-indigo-500 to-indigo-600" kpiKey="Cuota Mensual"/>
+                <KpiCard label="Total Intereses" value={fmt(results.totalIntereses, currency)}  icon={Percent}     grad="from-rose-500 to-rose-600"    kpiKey="Total Intereses"/>
+                <KpiCard label="Total a Pagar"   value={fmt(results.totalPaid, currency)}       icon={TrendingDown} grad="from-amber-500 to-amber-600"   kpiKey="Total a Pagar"/>
+                <KpiCard label="Sobrecosto"      value={`${fmtN(results.effectiveCost)}%`} sub="sobre capital" icon={AlertCircle} grad="from-violet-500 to-violet-600" kpiKey="Sobrecosto"/>
+                <KpiCard label="TIR Anual"       value={`${fmtN(results.tir_anual, 3)}%`} sub="Tasa efectiva" icon={Activity}    grad="from-emerald-500 to-emerald-600" kpiKey="TIR Anual"/>
+                <KpiCard label="Plazo"           value={`${plazo} meses`} sub={`${fmtN(plazo / 12, 1)} años`} icon={Clock} grad="from-sky-500 to-sky-600" kpiKey="Plazo"/>
               </div>
 
               {/* ── TABS (no se imprimen) ── */}
@@ -589,7 +713,7 @@ export default function App() {
               </div>
 
               {/* ── TAB GRÁFICAS ── */}
-              <div className={`tab-panel space-y-4 ${activeTab !== 'graficas' ? 'hidden' : ''}`}>
+              <div className={`tab-panel space-y-4 ${activeTab !== 'graficas' ? 'hidden print:block' : ''}`}>
                 <div className="charts-grid grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                   {/* Pastel */}
@@ -659,7 +783,7 @@ export default function App() {
               </div>
 
               {/* ── TAB TABLA ── */}
-              <div className={`tab-panel ${activeTab !== 'tabla' ? 'hidden' : ''}`}>
+              <div className={`tab-panel ${activeTab !== 'tabla' ? 'hidden print:block' : ''}`}>
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                     <div className="flex items-center gap-2">
@@ -710,7 +834,7 @@ export default function App() {
               </div>
 
               {/* ── TAB ANÁLISIS ── */}
-              <div className={`tab-panel ${activeTab !== 'analisis' ? 'hidden' : ''}`}>
+              <div className={`tab-panel ${activeTab !== 'analisis' ? 'hidden print:block' : ''}`}>
                 <Analysis/>
               </div>
 

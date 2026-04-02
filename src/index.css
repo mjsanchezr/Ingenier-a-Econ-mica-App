@@ -110,9 +110,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
   .charts-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 
   /* Table */
-  .amort-table { break-inside: auto; font-size: 8pt !important; }
-  .amort-table tr { break-inside: avoid; }
-  .amort-table-wrapper { max-height: none !important; overflow: visible !important; }
+  .amort-table { break-inside: auto; font-size: 7.5pt !important; }
+  .amort-table tr { break-inside: avoid; break-after: auto; }
+  .amort-table th, .amort-table td { padding: 4px 6px !important; }
+  /* CRITICAL: remove scroll container height limits on print */
+  .amort-table-wrapper {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
 
   /* Analysis */
   .analysis-block { 
